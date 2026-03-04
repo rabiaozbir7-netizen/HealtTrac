@@ -8,6 +8,8 @@ const STORAGE_KEYS = {
     REMINDERS: 'healtrack_reminders',
     MOVEMENT_STATUS: 'healtrack_movement_status',
     FEED_COMMENTS: 'healtrack_feed_comments',
+    EDUCATION_TOPICS: 'healtrack_education_topics',
+    FEEDBACK_RATING: 'healtrack_feedback_rating',
 };
 
 export const storage = {
@@ -128,5 +130,37 @@ export const storage = {
             console.error('Error getting feed comments', e);
             return null;
         }
-    }
+    },
+    saveEducationTopics: async (topics) => {
+        try {
+            await AsyncStorage.setItem(STORAGE_KEYS.EDUCATION_TOPICS, JSON.stringify(topics));
+        } catch (e) {
+            console.error('Error saving education topics', e);
+        }
+    },
+    getEducationTopics: async () => {
+        try {
+            const data = await AsyncStorage.getItem(STORAGE_KEYS.EDUCATION_TOPICS);
+            return data ? JSON.parse(data) : null;
+        } catch (e) {
+            console.error('Error getting education topics', e);
+            return null;
+        }
+    },
+    saveFeedbackRating: async (rating) => {
+        try {
+            await AsyncStorage.setItem(STORAGE_KEYS.FEEDBACK_RATING, String(rating));
+        } catch (e) {
+            console.error('Error saving feedback rating', e);
+        }
+    },
+    getFeedbackRating: async () => {
+        try {
+            const value = await AsyncStorage.getItem(STORAGE_KEYS.FEEDBACK_RATING);
+            return value != null ? Number(value) : null;
+        } catch (e) {
+            console.error('Error getting feedback rating', e);
+            return null;
+        }
+    },
 };

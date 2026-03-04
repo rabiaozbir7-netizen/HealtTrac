@@ -12,18 +12,20 @@ const Reminders = () => {
 
     const [modalVisible, setModalVisible] = useState(false);
     const [editingId, setEditingId] = useState(null);
-    const [formData, setFormData] = useState({ title: '', time: '' });
+    const [formData, setFormData] = useState({ date: '', time: '' });
 
     useEffect(() => {
         const loadReminders = async () => {
             const savedReminders = await storage.getReminders();
-            if (savedReminders) {
+            if (savedReminders && Array.isArray(savedReminders) && savedReminders.length > 0) {
                 setReminders(savedReminders);
             } else {
-                setReminders([
-                    { id: 1, title: 'Yeni Öneri Eklendi', time: '10:00' },
-                    { id: 2, title: 'Görüşlerimi puanlayabilir misiniz?', time: '11:00' },
-                ]);
+                const initialReminders = [
+                    { id: 'medication', title: 'İlaç Hatırlatma Saati', date: '', time: '' },
+                    { id: 'doctor', title: 'Doktor Randevusu', date: '', time: '' },
+                ];
+                setReminders(initialReminders);
+                await storage.saveReminders(initialReminders);
             }
         };
         loadReminders();
@@ -36,13 +38,15 @@ const Reminders = () => {
     };
 
     const handleSave = async () => {
-        if (!formData.title || !formData.time) return;
+        if (!formData.time) return;
 
         let updatedReminders;
         if (editingId) {
-            updatedReminders = reminders.map(r => r.id === editingId ? { ...r, ...formData } : r);
+            updatedReminders = reminders.map(r =>
+                r.id === editingId ? { ...r, date: formData.date, time: formData.time } : r
+            );
         } else {
-            updatedReminders = [...reminders, { id: Date.now(), ...formData }];
+            updatedReminders = [...reminders, { id: Date.now().toString(), title: 'Hatırlatma', date: formData.date, time: formData.time }];
         }
 
         setReminders(updatedReminders);
@@ -50,12 +54,15 @@ const Reminders = () => {
 
         setModalVisible(false);
         setEditingId(null);
-        setFormData({ title: '', time: '' });
+        setFormData({ date: '', time: '' });
     };
 
     const handleEdit = (item) => {
         setEditingId(item.id);
-        setFormData({ title: item.title, time: item.time });
+        setFormData({
+            date: item.date || '',
+            time: item.time || '',
+        });
         setModalVisible(true);
     };
 
@@ -66,9 +73,7 @@ const Reminders = () => {
                     <ChevronLeft size={24} color="#FFFFFF" />
                 </TouchableOpacity>
                 <Text style={[styles.headerTitle, { fontSize }]}>Hatırlatmalar</Text>
-                <TouchableOpacity onPress={() => setModalVisible(true)}>
-                    <Plus size={24} color="#FFFFFF" />
-                </TouchableOpacity>
+                <View style={{ width: 24 }} />
             </View>
 
             <ScrollView contentContainerStyle={styles.scrollContent}>
@@ -83,7 +88,11 @@ const Reminders = () => {
                         >
                             <View style={styles.textColumn}>
                                 <Text style={[styles.itemTitle, isDark && styles.textDark, { fontSize: fontSize * 0.8 }]}>{item.title}</Text>
-                                <Text style={[styles.timeText, { fontSize: fontSize * 0.7 }]}>{item.time}</Text>
+                                <Text style={[styles.timeText, { fontSize: fontSize * 0.7 }]}>
+                                    {(item.date || '') && (item.time || '')
+                                        ? `${item.date} ${item.time}`
+                                        : item.time || item.date || 'Henüz ayarlanmadı'}
+                                </Text>
                             </View>
                             <ChevronRight size={20} color="#E64A19" />
                         </TouchableOpacity>
@@ -104,7 +113,13 @@ const Reminders = () => {
                     <View style={[styles.modalContent, isDark && styles.cardDark]}>
                         <View style={styles.modalHeader}>
                             <Text style={[styles.modalTitle, isDark && styles.textDark, { fontSize }]}>
-                                {editingId ? 'Hatırlatmayı Düzenle' : 'Yeni Hatırlatma Ekle'}
+                                {editingId === 'medication'
+                                    ? 'İlaç Hatırlatma Saati'
+                                    : editingId === 'doctor'
+                                        ? 'Doktor Randevusu'
+                                        : editingId
+                                            ? 'Hatırlatmayı Düzenle'
+                                            : 'Yeni Hatırlatma Ekle'}
                             </Text>
                             <TouchableOpacity onPress={() => setModalVisible(false)}>
                                 <X size={24} color={isDark ? "#FFF" : "#000"} />
@@ -113,10 +128,10 @@ const Reminders = () => {
 
                         <TextInput
                             style={[styles.input, isDark && styles.inputDark, { fontSize: fontSize * 0.9 }]}
-                            placeholder="Başlık"
+                            placeholder="Tarih (Opsiyonel, Örn: 01.01.2026)"
                             placeholderTextColor={isDark ? "#888" : "#999"}
-                            value={formData.title}
-                            onChangeText={(t) => setFormData({ ...formData, title: t })}
+                            value={formData.date}
+                            onChangeText={(t) => setFormData({ ...formData, date: t })}
                         />
                         <TextInput
                             style={[styles.input, isDark && styles.inputDark, { fontSize: fontSize * 0.9 }]}

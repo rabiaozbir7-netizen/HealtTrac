@@ -1,8 +1,9 @@
 import { useRouter } from 'expo-router';
 import { ChevronLeft, FileText, Home, Plus, Trash2, X } from 'lucide-react-native';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Modal, SafeAreaView, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { useSettings } from '../context/SettingsContext';
+import { storage } from '../utils/storage';
 
 const Section = ({ title, items, isDark, fontSize }) => (
     <View style={{ marginBottom: 14 }}>
@@ -143,13 +144,29 @@ const Education = () => {
 
     const [newTopic, setNewTopic] = useState({ title: '', content: '' });
 
-    const handleDelete = (id) => {
-        setEducationTopics(prev => prev.filter(topic => topic.id !== id));
+    useEffect(() => {
+        const loadTopics = async () => {
+            const saved = await storage.getEducationTopics();
+            if (saved && Array.isArray(saved) && saved.length > 0) {
+                setEducationTopics(saved);
+            }
+        };
+        loadTopics();
+    }, []);
+
+    const persistTopics = async (nextTopics) => {
+        setEducationTopics(nextTopics);
+        await storage.saveEducationTopics(nextTopics);
     };
 
-    const handleSave = () => {
+    const handleDelete = async (id) => {
+        const updated = educationTopics.filter(topic => topic.id !== id);
+        await persistTopics(updated);
+    };
+
+    const handleSave = async () => {
         if (!newTopic.title) return;
-        setEducationTopics(prev => [{
+        const updated = [{
             id: Date.now(),
             title: newTopic.title,
             date: new Date().toLocaleString('tr-TR'),
@@ -159,7 +176,9 @@ const Education = () => {
                     items: newTopic.content ? newTopic.content.split('\n').filter(l => l.trim()) : [newTopic.title]
                 }
             ]
-        }, ...prev]);
+        }, ...educationTopics];
+
+        await persistTopics(updated);
         setShowAddForm(false);
         setNewTopic({ title: '', content: '' });
     };

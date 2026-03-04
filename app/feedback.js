@@ -1,11 +1,27 @@
 import { useRouter } from 'expo-router';
 import { ChevronLeft, Home, Star } from 'lucide-react-native';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { SafeAreaView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { storage } from '../utils/storage';
 
 const Feedback = () => {
     const router = useRouter();
     const [rating, setRating] = useState(0);
+
+    useEffect(() => {
+        const loadRating = async () => {
+            const saved = await storage.getFeedbackRating();
+            if (typeof saved === 'number' && !Number.isNaN(saved)) {
+                setRating(saved);
+            }
+        };
+        loadRating();
+    }, []);
+
+    const handleSave = async () => {
+        await storage.saveFeedbackRating(rating);
+        router.push('/');
+    };
 
     return (
         <SafeAreaView style={styles.container}>
@@ -37,7 +53,7 @@ const Feedback = () => {
 
                 <TouchableOpacity
                     style={styles.saveButton}
-                    onPress={() => router.push('/')}
+                    onPress={handleSave}
                 >
                     <Text style={styles.saveButtonText}>KAYDET</Text>
                 </TouchableOpacity>
